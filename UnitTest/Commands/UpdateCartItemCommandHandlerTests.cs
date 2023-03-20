@@ -1,6 +1,7 @@
 ﻿using Bogus;
 using EcommerceApi.Commands;
 using EcommerceApi.Dtos;
+using EcommerceApi.Entities;
 using EcommerceApi.Handlers;
 using EcommerceApi.Services.Interfaces;
 using FluentAssertions;
@@ -19,7 +20,7 @@ namespace UnitTest.Commands
                 .RuleFor(u => u.Id, f => f.Random.Guid())
                 .RuleFor(u => u.Quantity, f => f.Random.Int(1,10)).Generate();
 
-            var cartItemDtoOutput = new Faker<CartItemDtoOutput>()
+            var cartItem = new Faker<CartItem>()
                 .RuleFor(c => c.Id, command.Id)
                 .RuleFor(c => c.OrderId, f => f.Random.Guid())
                 .RuleFor(c => c.ProductName, f => f.Commerce.ProductName())
@@ -29,8 +30,8 @@ namespace UnitTest.Commands
 
             var mockCartItemService = new Mock<ICartItemService>();
             mockCartItemService
-                .Setup(s => s.Update(It.IsAny<int>(), It.IsAny<Guid>()))
-                .ReturnsAsync(cartItemDtoOutput);
+                .Setup(s => s.UpdateCartItem(It.IsAny<int>(), It.IsAny<Guid>()))
+                .ReturnsAsync(cartItem);
 
             var handler = new UpdateCartItemHandler(mockCartItemService.Object);
 
@@ -38,9 +39,9 @@ namespace UnitTest.Commands
             var result = await handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().BeEquivalentTo(cartItemDtoOutput);
+            result.Should().BeEquivalentTo(cartItem);
 
-            mockCartItemService.Verify(s => s.Update(It.IsAny<int>(), It.IsAny<Guid>()), Times.Once);
+            mockCartItemService.Verify(s => s.UpdateCartItem(It.IsAny<int>(), It.IsAny<Guid>()), Times.Once);
         }
 
         [Fact]
@@ -53,8 +54,8 @@ namespace UnitTest.Commands
 
             var mockCartItemService = new Mock<ICartItemService>();
             mockCartItemService
-                .Setup(s => s.Update(It.IsAny<int>(), It.IsAny<Guid>()))
-                .ReturnsAsync(null as CartItemDtoOutput);
+                .Setup(s => s.UpdateCartItem(It.IsAny<int>(), It.IsAny<Guid>()))
+                .ReturnsAsync(null as CartItem);
 
             var handler = new UpdateCartItemHandler(mockCartItemService.Object);
 
@@ -64,7 +65,7 @@ namespace UnitTest.Commands
             // Assert
             result.Should().BeNull();
 
-            mockCartItemService.Verify(s => s.Update(It.IsAny<int>(), It.IsAny<Guid>()), Times.Once);
+            mockCartItemService.Verify(s => s.UpdateCartItem(It.IsAny<int>(), It.IsAny<Guid>()), Times.Once);
         }
     }
 }

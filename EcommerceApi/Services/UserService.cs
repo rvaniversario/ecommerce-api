@@ -1,4 +1,4 @@
-﻿using EcommerceApi.Dtos;
+﻿
 using EcommerceApi.Entities;
 using EcommerceApi.Repositories.Interfaces;
 using EcommerceApi.Services.Interfaces;
@@ -14,7 +14,7 @@ namespace EcommerceApi.Services
             _userRepository = userRepository;
         }
 
-        public async Task<UserDtoOutput> Add(string name)
+        public async Task<User> AddUser(string name)
         {
             var UserEntity = new User
             {
@@ -23,7 +23,7 @@ namespace EcommerceApi.Services
             return await _userRepository.AddUser(UserEntity);
         }
 
-        public async Task<User?> GetById(Guid id)
+        public async Task<User?> GetUserById(Guid id)
         {
             return await _userRepository.GetUserById(id);
         }

@@ -1,4 +1,4 @@
-﻿using EcommerceApi.Dtos;
+﻿
 using EcommerceApi.Entities;
 using EcommerceApi.Enums;
 using EcommerceApi.Repositories.Interfaces;
@@ -17,11 +17,11 @@ namespace EcommerceApi.Services
             _orderRepository = orderRepository;
         }
 
-        public async Task<CartItemDtoOutput> Add(Guid userId,string productName,double productPrice,int quantity)
+        public async Task<CartItem> AddCartItem(Guid userId, string productName, double productPrice, int quantity)
         {
-            var orders = await _orderRepository.GetOrders();
+            var orders = await _orderRepository.GetOrders(userId);
 
-            var pendingOrder = orders.FirstOrDefault(x => x.UserId == userId && x.Status == Status.Pending);
+            var pendingOrder = orders.FirstOrDefault(x => x.Status == Status.Pending);
 
             if (pendingOrder == null)
             {
@@ -36,14 +36,16 @@ namespace EcommerceApi.Services
                     Status = Status.Pending,
                 };
 
-                Math.Round(newOrder.OrderPrice, 2);
+                newOrder.OrderPrice = Math.Round(newOrder.OrderPrice, 2);
 
                 await _orderRepository.AddOrder(newOrder);
+
+                cartItemPrice = Math.Round(cartItemPrice, 2);
 
                 var newItem = new CartItem
                 {
                     OrderId = newOrder.Id,
-                    ProductName =  productName,
+                    ProductName = productName,
                     ProductPrice = productPrice,
                     ItemPrice = cartItemPrice,
                     Quantity = quantity
@@ -54,21 +56,21 @@ namespace EcommerceApi.Services
             else
             {
                 var cartItemPrice = productPrice * quantity;
-                var orderPrice = pendingOrder.OrderPrice + cartItemPrice;
+                cartItemPrice = Math.Round(cartItemPrice, 2);
 
-                Math.Round(cartItemPrice, 2);
-                Math.Round(orderPrice, 2);
-
-                var newItem = new CartItem 
+                var newItem = new CartItem
                 {
                     OrderId = pendingOrder.Id,
                     ProductName = productName,
                     ProductPrice = productPrice,
                     ItemPrice = cartItemPrice,
-                    Quantity = quantity 
+                    Quantity = quantity
                 };
 
                 var item = await _cartItemRepository.AddCartItem(newItem);
+
+                var orderPrice = pendingOrder.OrderPrice + cartItemPrice;
+                orderPrice = Math.Round(orderPrice, 2);
 
                 await _orderRepository.UpdateOrderPrice(pendingOrder.Id, orderPrice);
 
@@ -76,53 +78,64 @@ namespace EcommerceApi.Services
             }
         }
 
-        public async Task<CartItemDtoOutput?> Delete(Guid id)
+        public async Task<CartItem?> DeleteCartItem(Guid id)
         {
-            var items = await _cartItemRepository.GetCartItems();
-            var item = items.FirstOrDefault(x => x.Id == id);
+            var item = await _cartItemRepository.GetCartItemById(id);
 
             if (item == null) return default;
 
-            var order = await _orderRepository.GetOrderById(item.OrderId);
+            var items = await _cartItemRepository.GetCartItems(item.OrderId);
 
-            var orderItems = items.Where(x => x.OrderId == item.OrderId);
-
-            if (orderItems.Count() < 2)
+            if (items.Count() < 2)
             {
                 var deletedItem = await _cartItemRepository.DeleteCartItem(item.Id);
 
-                await _orderRepository.DeleteOrder(order.Id);
+                await _orderRepository.DeleteOrder(item.OrderId);
 
                 return deletedItem;
             }
             else
             {
+                var order = await _orderRepository.GetOrderById(item.OrderId);
+
                 var orderPrice = order.OrderPrice - item.ItemPrice;
-                Math.Round(orderPrice, 2);
+                orderPrice = Math.Round(orderPrice, 2);
 
                 var deletedItem = await _cartItemRepository.DeleteCartItem(item.Id);
 
                 await _orderRepository.UpdateOrderPrice(order.Id, orderPrice);
-                
+
                 return deletedItem;
             }
         }
 
-        public async Task<IEnumerable<CartItem>> GetAll()
+        public async Task<CartItem> GetCartItemById(Guid id)
         {
-            var cartItems = await _cartItemRepository.GetCartItems();
+            var cartItem = await _cartItemRepository.GetCartItemById(id);
+
+            if (cartItem == null) return default;
+
+            return cartItem;
+        }
+
+        public async Task<IEnumerable<CartItem>> GetCartItems(Guid userId)
+        {
+            var orders = await _orderRepository.GetOrders(userId);
+
+            if (!orders.Any()) return null;
+
+            var order = orders.FirstOrDefault(x => x.Status == Status.Pending);
+
+            var cartItems = await _cartItemRepository.GetCartItems(order.Id);
             return cartItems;
         }
 
-        public async Task<CartItemDtoOutput?> Update(int quantity, Guid id)
+        public async Task<CartItem?> UpdateCartItem(int quantity, Guid id)
         {
-            var items = await _cartItemRepository.GetCartItems();
-
-            var itemToUpdate = items.FirstOrDefault(x => x.Id == id);
+            var itemToUpdate = await _cartItemRepository.GetCartItemById(id);
 
             if (itemToUpdate == null) return null;
 
-            var newQuantity = quantity;
             var newItemPrice = itemToUpdate.ProductPrice * quantity;
 
             var orderToUpdate = await _orderRepository.GetOrderById(itemToUpdate!.OrderId);
@@ -130,9 +143,11 @@ namespace EcommerceApi.Services
             var newOrderPrice = orderToUpdate!.OrderPrice - itemToUpdate.ItemPrice;
             newOrderPrice += newItemPrice;
 
-            Math.Round(newOrderPrice, 2);
+            newItemPrice = Math.Round(newItemPrice, 2);
 
-            var item = await _cartItemRepository.UpdateCartItem(itemToUpdate.Id, newItemPrice, newQuantity);
+            newOrderPrice = Math.Round(newOrderPrice, 2);
+
+            var item = await _cartItemRepository.UpdateCartItem(itemToUpdate.Id, newItemPrice, quantity);
             await _orderRepository.UpdateOrderPrice(orderToUpdate.Id, newOrderPrice);
 
             return item;

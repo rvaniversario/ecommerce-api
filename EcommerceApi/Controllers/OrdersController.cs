@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using EcommerceApi.Commands;
-using EcommerceApi.Dtos;
+
 using EcommerceApi.Queries;
 using MediatR;
+using EcommerceApi.Enums;
+using EcommerceApi.Dtos;
 
 namespace EcommerceApi.Controllers
 {
@@ -23,11 +25,21 @@ namespace EcommerceApi.Controllers
         [HttpGet]
         public async Task<ActionResult> GetOrders()
         {
-            var request = new GetOrdersQuery();
+            var userId = Request.Headers["x-user-id"][0];
+
+            var request = new GetOrdersQuery
+            {
+                UserId = Guid.Parse(userId)
+            };
 
             try
             {
                 var response = await _mediator.Send(request);
+
+                if (response == null)
+                {
+                    return Ok("No orders found.");
+                }
 
                 return Ok(response);
             }
@@ -37,9 +49,10 @@ namespace EcommerceApi.Controllers
                 return StatusCode(500, "An unexpected error occurred. Please try again later.");
             }
         }
+
         [HttpGet]
         [Route("{orderId:Guid}")]
-        public async Task<ActionResult> GetOrder([FromRoute] Guid orderId)
+        public async Task<ActionResult> GetOrderById([FromRoute] Guid orderId)
         {
             var request = new GetOrderByIdQuery
             {
@@ -94,7 +107,7 @@ namespace EcommerceApi.Controllers
 
         [HttpDelete]
         [Route("{orderId:Guid}")]
-        public async Task<ActionResult> Delete([FromRoute] Guid orderId)
+        public async Task<ActionResult> DeleteOrder([FromRoute] Guid orderId)
         {
             var request = new DeleteOrderCommand
             {

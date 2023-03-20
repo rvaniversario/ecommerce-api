@@ -5,35 +5,34 @@ using EcommerceApi.Context;
 using EcommerceApi.Enums;
 using EcommerceApi.Repositories.Interfaces;
 using EcommerceApi.Entities;
-using EcommerceApi.Dtos;
+
 using Microsoft.Data.SqlClient;
 
 namespace EcommerceApi.Repositories
 {
     public class OrderRepository : IOrderRepository
     {
-        private readonly string _connectionString;
+        private readonly string _conString;
         protected readonly AppDbContext _context;
         protected readonly ILogger<OrdersController> _logger;
 
-        public OrderRepository(AppDbContext context, ILogger<OrdersController> logger, IConfiguration configuration)
+        public OrderRepository(AppDbContext context, ILogger<OrdersController> logger, string conString)
         {
             _context = context;
             _logger = logger;
-            _connectionString = configuration.GetConnectionString("EcommerceApi");
-            //_connectionString = configuration.GetConnectionString("EcommerceApiTest");
+            _conString = conString;
 
             _context.Database.EnsureCreated();
         }
 
-        public async Task<IEnumerable<Order>> GetOrders()
+        public async Task<IEnumerable<Order>> GetOrders(Guid userId)
         {
             try
             {
                 _logger.LogInformation("Creating connection...");
-                using var connection = new SqlConnection(_connectionString);
+                using var connection = new SqlConnection(_conString);
 
-                var query = "SELECT * FROM Orders AS A INNER JOIN CartItems AS B ON A.Id = B.OrderId";
+                var query = "SELECT * FROM Orders AS A INNER JOIN CartItems AS B ON A.Id = B.OrderId WHERE A.UserId = @UserId";
                 var orderDictionary = new Dictionary<Guid, Order>();
 
                 _logger.LogInformation("Opening connection...");
@@ -55,6 +54,7 @@ namespace EcommerceApi.Repositories
                         orderEntry.CartItems!.Add(cartItem);
                         return orderEntry;
                     },
+                    new { UserId = userId },
                     splitOn: "Id"
                     );
 
@@ -72,7 +72,7 @@ namespace EcommerceApi.Repositories
             try
             {
                 _logger.LogInformation("Creating connection...");
-                using var connection = new SqlConnection(_connectionString);
+                using var connection = new SqlConnection(_conString);
                 var query = "SELECT * FROM Orders WHERE Id = @Id;" + "SELECT * FROM CartItems WHERE OrderId = @Id";
 
                 var multi = await connection.QueryMultipleAsync(query, new { id });
@@ -110,7 +110,7 @@ namespace EcommerceApi.Repositories
             }
         }
 
-        public async Task<CheckoutDtoOutput> Checkout(Guid id, Status status)
+        public async Task<Order> Checkout(Guid id, Status status)
         {
             try
             {
@@ -123,13 +123,7 @@ namespace EcommerceApi.Repositories
                 _logger.LogInformation("Saving Changes...");
                 await _context.SaveChangesAsync();
 
-                return new CheckoutDtoOutput
-                {
-                    Id = order.Id,
-                    UserId = order.UserId,
-                    OrderPrice = order.OrderPrice,
-                    Status = order.Status,
-                };
+                return order;
             }
             catch (Exception ex)
             {
@@ -138,7 +132,7 @@ namespace EcommerceApi.Repositories
             }
         }
 
-        public async Task<Order> UpdateOrderPrice(Guid id, double orderPrice)
+        public async Task UpdateOrderPrice(Guid id, double orderPrice)
         {
             try
             {
@@ -151,8 +145,6 @@ namespace EcommerceApi.Repositories
 
                 _logger.LogInformation("Saving Changes...");
                 await _context.SaveChangesAsync();
-
-                return order;
             }
             catch (Exception ex)
             {
@@ -183,7 +175,7 @@ namespace EcommerceApi.Repositories
             }
         }
 
-        public async Task<OrderDtoOutput> DeleteOrder(Guid id)
+        public async Task<Order> DeleteOrder(Guid id)
         {
             try
             {
@@ -195,14 +187,7 @@ namespace EcommerceApi.Repositories
                 _logger.LogInformation("Saving Changes...");
                 await _context.SaveChangesAsync();
 
-                return new OrderDtoOutput
-                {
-                    Id = order.Id,
-                    UserId = order.UserId,
-                    OrderPrice = order.OrderPrice,
-                    Status = order.Status,
-                    CartItems = order.CartItems,
-                };
+                return order;
             }
             catch (Exception ex)
             {

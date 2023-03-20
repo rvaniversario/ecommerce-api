@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using EcommerceApi.Commands;
-using EcommerceApi.Dtos;
+
 using EcommerceApi.Queries;
 using MediatR;
+using EcommerceApi.Dtos;
 
 namespace EcommerceApi.Controllers
 {
@@ -22,7 +23,7 @@ namespace EcommerceApi.Controllers
 
         [HttpGet]
         [Route("{userId:Guid}")]
-        public async Task<ActionResult> GetUser([FromRoute] Guid userId)
+        public async Task<ActionResult> GetUserById([FromRoute] Guid userId)
         {
             var request = new GetUserByIdQuery { Id = userId };
 
@@ -47,11 +48,6 @@ namespace EcommerceApi.Controllers
         [HttpPost]
         public async Task<ActionResult> AddUser(AddUserDto dto)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             var command = new AddUserCommand
             {
                 Name = dto.Name,

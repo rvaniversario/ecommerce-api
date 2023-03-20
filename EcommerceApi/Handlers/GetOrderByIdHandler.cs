@@ -13,7 +13,7 @@ namespace EcommerceApi.Handlers
 
         public async Task<Order?> Handle(GetOrderByIdQuery request, CancellationToken cancellationToken)
         {
-            var order = await _orderService.GetById(request.Id);
+            var order = await _orderService.GetOrderById(request.Id);
             return order;
         }
     }

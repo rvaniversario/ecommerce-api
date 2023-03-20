@@ -1,8 +1,9 @@
 ﻿using MediatR;
-using EcommerceApi.Dtos;
+
 using EcommerceApi.Models;
+using EcommerceApi.Entities;
 
 namespace EcommerceApi.Commands
 {
-    public class UpdateOrderCommand : OrderModel, IRequest<OrderDtoOutput> { }
+    public class UpdateOrderCommand : OrderModel, IRequest<Order> { }
 }

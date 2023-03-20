@@ -26,7 +26,7 @@ namespace UnitTest.Queries
 
             var mockCartItemService = new Mock<ICartItemService>();
             mockCartItemService
-                .Setup(s => s.GetAll())
+                .Setup(s => s.GetCartItems(It.IsAny<Guid>()))
                 .ReturnsAsync(cartItems);
 
             var handler = new GetCartItemsHandler(mockCartItemService.Object);
@@ -45,7 +45,7 @@ namespace UnitTest.Queries
                 expectedCartItem.Should().BeEquivalentTo(cartItem);
             }
 
-            mockCartItemService.Verify(s => s.GetAll(), Times.Once);
+            mockCartItemService.Verify(s => s.GetCartItems(It.IsAny<Guid>()), Times.Once);
         }
     }
 }

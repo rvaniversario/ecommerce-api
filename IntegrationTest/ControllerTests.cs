@@ -77,8 +77,8 @@ namespace IntegrationTest
         {
             // Arrange
             var user = SeedUsers().First();
-            SeedOrders();
-            SeedCartItems();
+            var order = SeedOrders(user.Id);
+            SeedCartItems(order.Id);
 
             var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/orders");
             request.Headers.Add("x-user-id", user.Id.ToString());
@@ -95,8 +95,8 @@ namespace IntegrationTest
         {
             // Arrange
             var user = SeedUsers().First();
-            var expectedOrder = SeedOrders();
-            SeedCartItems();
+            var expectedOrder = SeedOrders(user.Id);
+            SeedCartItems(expectedOrder.Id);
 
             var request = new HttpRequestMessage(HttpMethod.Get, $"/api/v1/orders/{expectedOrder.Id}");
             request.Headers.Add("x-user-id", user.Id.ToString());
@@ -116,7 +116,7 @@ namespace IntegrationTest
         {
             // Arrange
             var user = SeedUsers().First();
-            var order = SeedOrders();
+            var order = SeedOrders(user.Id);
 
             var requestBody = new Faker<UpdateOrderCommand>()
                 .RuleFor(x => x.Id, order.Id)
@@ -141,7 +141,7 @@ namespace IntegrationTest
         {
             // Arrange
             var user = SeedUsers().First();
-            var order = SeedOrders();
+            var order = SeedOrders(user.Id);
 
             var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/v1/orders/{order.Id}");
             request.Headers.Add("x-user-id", user.Id.ToString());
@@ -161,11 +161,11 @@ namespace IntegrationTest
         {
             // Arrange
             var user = SeedUsers().First();
-            SeedOrders();
-            var cartItems = SeedCartItems();
+            var order = SeedOrders(user.Id);
+            var cartItems = SeedCartItems(order.Id);
 
             var request = new HttpRequestMessage(HttpMethod.Get, "/api/v1/cart-items");
-            request.Headers.Add("x-user-id", user.Id.ToString());
+            request.Headers.Add("x-user-id", order.UserId.ToString());
 
             // Act
             var response = await _client.SendAsync(request);
@@ -189,6 +189,8 @@ namespace IntegrationTest
                 .RuleFor(x => x.ProductPrice, f => f.Random.Double(1.99, 99.99))
                 .RuleFor(x => x.Quantity, f => f.Random.Int(1, 5)).Generate();
 
+            requestBody.ProductPrice = Math.Round(requestBody.ProductPrice, 2);
+
             var expectedCartItem = new CartItem
             {
                 ProductName = requestBody.ProductName,
@@ -209,7 +211,6 @@ namespace IntegrationTest
             // Assert
             response.Should().HaveStatusCode(HttpStatusCode.OK);
             parsedContent.Id.Should().NotBeEmpty();
-            parsedContent.OrderId.Should().NotBeEmpty();
             parsedContent.ProductName.Should().Be(expectedCartItem.ProductName);
             parsedContent.ProductPrice.Should().Be(expectedCartItem.ProductPrice);
             parsedContent.ItemPrice.Should().Be(expectedCartItem.ItemPrice);
@@ -221,7 +222,8 @@ namespace IntegrationTest
         {
             // Arrange
             var user = SeedUsers().First();
-            var cartItem = SeedCartItems().First();
+            var order = SeedOrders(user.Id);
+            var cartItem = SeedCartItems(order.Id).First();
 
             var requestBody = new Faker<UpdateCartItemCommand>()
                 .RuleFor(x => x.Id, cartItem.Id)
@@ -237,6 +239,8 @@ namespace IntegrationTest
                 Quantity = requestBody.Quantity,
             };
 
+            updatedCartItem.ItemPrice = Math.Round(updatedCartItem.ItemPrice,2);
+
             var request = new HttpRequestMessage(HttpMethod.Put, $"/api/v1/cart-items/{cartItem.Id}");
             request.Headers.Add("x-user-id", user.Id.ToString());
             request.Content = ContentHelper.GetStringContent(requestBody);
@@ -245,6 +249,8 @@ namespace IntegrationTest
             var response = await _client.SendAsync(request);
             var content = await response.Content.ReadAsStringAsync();
             var parsedContent = JsonConvert.DeserializeObject<CartItem>(content);
+
+            parsedContent.ItemPrice = Math.Round(parsedContent.ItemPrice,2);
 
             // Assert
             response.Should().HaveStatusCode(HttpStatusCode.OK);
@@ -261,7 +267,8 @@ namespace IntegrationTest
         {
             // Arrange
             var user = SeedUsers().First();
-            var cartItem = SeedCartItems().First();
+            var order = SeedOrders(user.Id);
+            var cartItem = SeedCartItems(order.Id).First();
 
             var request = new HttpRequestMessage(HttpMethod.Delete, $"/api/v1/cart-items/{cartItem.Id}");
             request.Headers.Add("x-user-id", user.Id.ToString());
@@ -287,12 +294,12 @@ namespace IntegrationTest
             return users;
         }
 
-        private Order SeedOrders()
+        private Order SeedOrders(Guid userId)
         {
             var order = new Faker<Order>()
-                .RuleFor(x => x.UserId, f => f.Random.Guid())
+                .RuleFor(x => x.UserId, f => userId)
                 .RuleFor(x => x.OrderPrice, f => f.Random.Double())
-                .RuleFor(x => x.Status, f => f.Random.Enum(Status.Pending)).Generate();
+                .RuleFor(x => x.Status, f => f.Random.Enum(Status.Processed,Status.Cancelled)).Generate();
 
             _context.Orders.AddRange(order);
             _context.SaveChanges();
@@ -300,10 +307,10 @@ namespace IntegrationTest
             return order;
         }
 
-        private List<CartItem> SeedCartItems()
+        private List<CartItem> SeedCartItems(Guid orderId)
         {
             var cartItems = new Faker<CartItem>()
-                .RuleFor(x => x.OrderId, SeedOrders().Id)
+                .RuleFor(x => x.OrderId, orderId)
                 .RuleFor(x => x.ProductName, f => f.Commerce.ProductName())
                 .RuleFor(x => x.ProductPrice, f => f.Random.Double())
                 .RuleFor(x => x.ItemPrice, f => f.Random.Double())

@@ -21,16 +21,9 @@ namespace EcommerceApi.Middlewares
                 return;
             }
 
-            if (!context.Request.Headers.ContainsKey("x-user-id"))
-            {
-                context.Response.StatusCode = 401;
-                return;
-            }
+            var userId = context.Request.GetHeaderValue("x-user-id");
 
-            string userId = context.Request.Headers["x-user-id"];
-            Guid parsedUserId = Guid.Parse(userId);
-
-            if(!IsValidUserId(parsedUserId))
+            if (userId == Guid.Empty || !IsValidUserId(userId))
             {
                 context.Response.StatusCode = 401;
                 return;
