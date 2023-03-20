@@ -1,7 +1,6 @@
 ﻿using Bogus;
 using EcommerceApi.Commands;
 using EcommerceApi.Dtos;
-using EcommerceApi.Entities;
 using EcommerceApi.Enums;
 using EcommerceApi.Handlers;
 using EcommerceApi.Services.Interfaces;
@@ -19,7 +18,7 @@ namespace UnitTest.Commands
             var command = new Faker<DeleteOrderCommand>()
                 .RuleFor(d => d.Id, f => f.Random.Guid()).Generate();
 
-            var order = new Faker<Order>()
+            var orderDtoOutput = new Faker<OrderDtoOutput>()
                 .RuleFor(o => o.Id, command.Id)
                 .RuleFor(o => o.UserId, f => f.Random.Guid())
                 .RuleFor(o => o.OrderPrice, f => f.Random.Double())
@@ -27,8 +26,8 @@ namespace UnitTest.Commands
 
             var mockOrderService = new Mock<IOrderService>();
             mockOrderService
-                .Setup(s => s.DeleteOrder(It.IsAny<Guid>()))
-                .ReturnsAsync(order);
+                .Setup(s => s.Delete(It.IsAny<Guid>()))
+                .ReturnsAsync(orderDtoOutput);
 
             var handler = new DeleteOrderHandler(mockOrderService.Object);
 
@@ -37,12 +36,12 @@ namespace UnitTest.Commands
 
             // Assert
             response.Should().NotBeNull();
-            response.Id.Should().Be(order.Id);
-            response.UserId.Should().Be(order.UserId);
-            response.OrderPrice.Should().Be(order.OrderPrice);
-            response.Status.Should().Be(order.Status);
+            response.Id.Should().Be(orderDtoOutput.Id);
+            response.UserId.Should().Be(orderDtoOutput.UserId);
+            response.OrderPrice.Should().Be(orderDtoOutput.OrderPrice);
+            response.Status.Should().Be(orderDtoOutput.Status);
 
-            mockOrderService.Verify(s => s.DeleteOrder(It.IsAny<Guid>()), Times.Once);
+            mockOrderService.Verify(s => s.Delete(It.IsAny<Guid>()), Times.Once);
         }
 
         [Fact]
@@ -55,8 +54,8 @@ namespace UnitTest.Commands
             var mockOrderService = new Mock<IOrderService>();
 
             mockOrderService
-                .Setup(s => s.DeleteOrder(It.IsAny<Guid>()))
-                .ReturnsAsync(null as Order);
+                .Setup(s => s.Delete(It.IsAny<Guid>()))
+                .ReturnsAsync(null as OrderDtoOutput);
 
             var handler = new DeleteOrderHandler(mockOrderService.Object);
 
@@ -66,7 +65,7 @@ namespace UnitTest.Commands
             // Assert
             result.Should().BeNull();
 
-            mockOrderService.Verify(s => s.DeleteOrder(It.IsAny<Guid>()), Times.Once);
+            mockOrderService.Verify(s => s.Delete(It.IsAny<Guid>()), Times.Once);
         }
     }
 }

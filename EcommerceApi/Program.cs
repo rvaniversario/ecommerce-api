@@ -14,13 +14,10 @@ using EcommerceApi.Middlewares;
 var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 // Dependency Register
-var mainConString = builder.Configuration.GetConnectionString("EcommerceApi");
-var testConString = builder.Configuration.GetConnectionString("EcommerceApiTest");
-
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory())
     .ConfigureContainer<ContainerBuilder>(builder =>
     {
-        builder.RegisterModule(new RepositoriesModule(mainConString));
+        builder.RegisterModule(new RepositoriesModule());
         builder.RegisterModule(new ServicesModule());
     });
 
@@ -50,9 +47,10 @@ builder.Services.AddVersionedApiExplorer(setup =>
 builder.Services.AddMediatR(typeof(Program));
 
 // Context
-
 builder.Services.AddDbContext<AppDbContext>
-    (o => o.UseSqlServer(mainConString));
+    (o => o.UseSqlServer(builder.Configuration.GetConnectionString("EcommerceApi")));
+//builder.Services.AddDbContext<AppDbContext>
+//    (o => o.UseSqlServer(builder.Configuration.GetConnectionString("EcommerceApiTest")));
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

@@ -1,19 +1,19 @@
 ﻿using MediatR;
 using EcommerceApi.Commands;
+using EcommerceApi.Dtos;
 using EcommerceApi.Services.Interfaces;
-using EcommerceApi.Entities;
 
 namespace EcommerceApi.Handlers
 {
-    public class AddUserHandler : IRequestHandler<AddUserCommand, User>
+    public class AddUserHandler : IRequestHandler<AddUserCommand, UserDtoOutput>
     {
         private readonly IUserService _userService;
 
         public AddUserHandler(IUserService userService) => _userService = userService;
 
-        public async Task<User> Handle(AddUserCommand request, CancellationToken cancellationToken)
+        public async Task<UserDtoOutput> Handle(AddUserCommand request, CancellationToken cancellationToken)
         {
-            var output = await _userService.AddUser(request.Name!);
+            var output = await _userService.Add(request.Name!);
             return output;
         }
     }

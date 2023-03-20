@@ -1,9 +1,8 @@
 ﻿using MediatR;
-
+using EcommerceApi.Dtos;
 using EcommerceApi.Models;
-using EcommerceApi.Entities;
 
 namespace EcommerceApi.Commands
 {
-    public class UpdateCartItemCommand : CartItemModel, IRequest<CartItem> { }
+    public class UpdateCartItemCommand : CartItemModel, IRequest<CartItemDtoOutput> { }
 }

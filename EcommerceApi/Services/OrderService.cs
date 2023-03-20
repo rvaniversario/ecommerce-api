@@ -1,4 +1,4 @@
-﻿
+﻿using EcommerceApi.Dtos;
 using EcommerceApi.Entities;
 using EcommerceApi.Enums;
 using EcommerceApi.Repositories.Interfaces;
@@ -15,18 +15,20 @@ namespace EcommerceApi.Services
             _orderRepository = orderRepository;
         }
 
-        public async Task<Order?> Checkout(Guid userId)
+        public async Task<CheckoutDtoOutput?> Checkout(Guid id)
         {
-            var orders = await _orderRepository.GetOrders(userId);
+            var orders = await _orderRepository.GetOrders();
 
             var orderToCheckout = orders.FirstOrDefault(x => x.Status == Status.Pending);
 
             if (orderToCheckout == null) return default;
 
-            return await _orderRepository.Checkout(orderToCheckout.Id, Status.Processed);
+            var status = Status.Processed;
+
+            return await _orderRepository.Checkout(orderToCheckout.Id, status);
         }
 
-        public async Task<Order?> DeleteOrder(Guid id)
+        public async Task<OrderDtoOutput?> Delete(Guid id)
         {
             var orderToDelete = await _orderRepository.GetOrderById(id);
 
@@ -35,16 +37,13 @@ namespace EcommerceApi.Services
             return await _orderRepository.DeleteOrder(orderToDelete.Id);
         }
 
-        public async Task<IEnumerable<Order>> GetOrders(Guid userId)
+        public async Task<IEnumerable<Order>> GetAll()
         {
-            var orders = await _orderRepository.GetOrders(userId);
-
-            if (!orders.Any()) return null;
-
+            var orders = await _orderRepository.GetOrders();
             return orders;
         }
 
-        public async Task<Order?> GetOrderById(Guid id)
+        public async Task<Order?> GetById(Guid id)
         {
             var order = await _orderRepository.GetOrderById(id);
 
@@ -53,7 +52,7 @@ namespace EcommerceApi.Services
             return order;
         }
 
-        public async Task<Order?> UpdateOrderStatus(Status status, Guid id)
+        public async Task<OrderDtoOutput?> UpdateOrderStatus(Status status, Guid id)
         {
             var orderToUpdate = await _orderRepository.GetOrderById(id);
 
@@ -61,17 +60,28 @@ namespace EcommerceApi.Services
 
             var order = await _orderRepository.UpdateOrderStatus(orderToUpdate.Id, status);
 
-            return order;
+            return new OrderDtoOutput
+            {
+                Id = order.Id,
+                UserId = order.UserId,
+                OrderPrice = order.OrderPrice,
+                Status = order.Status,
+                CartItems = order.CartItems
+            };
         }
 
-        public async Task UpdateOrderPrice(double orderPrice, Guid id)
+        public async Task<Order?> UpdateOrderPrice(double orderPrice, Guid id)
         {
             var orderToUpdate = await _orderRepository.GetOrderById(id);
 
-            await _orderRepository.UpdateOrderPrice(orderToUpdate.Id, orderPrice);
+            if (orderToUpdate == null) return default;
+
+            var order = await _orderRepository.UpdateOrderPrice(orderToUpdate.Id, orderPrice);
+
+            return order;
         }
 
-        public async Task AddOrder(Guid userId, Status status, double orderPrice)
+        public async Task Add(Guid userId, Status status, double orderPrice)
         {
             var order = new Order
             {

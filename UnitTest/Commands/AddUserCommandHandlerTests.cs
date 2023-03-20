@@ -1,6 +1,6 @@
 ﻿using Bogus;
 using EcommerceApi.Commands;
-using EcommerceApi.Entities;
+using EcommerceApi.Dtos;
 using EcommerceApi.Handlers;
 using EcommerceApi.Services.Interfaces;
 using FluentAssertions;
@@ -17,14 +17,14 @@ namespace UnitTest.Commands
             var command = new Faker<AddUserCommand>()
                 .RuleFor(a => a.Name, f => f.Person.FullName).Generate();
 
-            var user = new Faker<User>()
+            var userDtoOutput = new Faker<UserDtoOutput>()
                 .RuleFor(u => u.Id, f => f.Random.Guid())
                 .RuleFor(u => u.Name, command.Name).Generate();
 
             var mockUserService = new Mock<IUserService>();
             mockUserService
-                .Setup(s => s.AddUser(It.IsAny<string>()))
-                .ReturnsAsync(user);
+                .Setup(s => s.Add(It.IsAny<string>()))
+                .ReturnsAsync(userDtoOutput);
 
             var handler = new AddUserHandler(mockUserService.Object);
 
@@ -33,10 +33,10 @@ namespace UnitTest.Commands
 
             // Assert
             result.Should().NotBeNull();
-            result.Id.Should().Be(user.Id);
-            result.Name.Should().Be(user.Name);
+            result.Id.Should().Be(userDtoOutput.Id);
+            result.Name.Should().Be(userDtoOutput.Name);
 
-            mockUserService.Verify(s => s.AddUser(It.IsAny<string>()), Times.Once);
+            mockUserService.Verify(s => s.Add(It.IsAny<string>()), Times.Once);
         }
     }
 }

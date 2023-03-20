@@ -25,7 +25,7 @@ namespace UnitTest.Queries
 
             var mockOrderService = new Mock<IOrderService>();
             mockOrderService
-                .Setup(s => s.GetOrders(It.IsAny<Guid>()))
+                .Setup(s => s.GetAll())
                 .ReturnsAsync(orders);
 
             var handler = new GetOrdersHandler(mockOrderService.Object);
@@ -43,7 +43,7 @@ namespace UnitTest.Queries
                 expectedOrder.Should().BeEquivalentTo(order);
             }
 
-            mockOrderService.Verify(s => s.GetOrders(It.IsAny<Guid>()), Times.Once);
+            mockOrderService.Verify(s => s.GetAll(), Times.Once);
         }
     }
 }

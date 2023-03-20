@@ -1,7 +1,6 @@
 ﻿using Bogus;
 using EcommerceApi.Commands;
 using EcommerceApi.Dtos;
-using EcommerceApi.Entities;
 using EcommerceApi.Enums;
 using EcommerceApi.Handlers;
 using EcommerceApi.Services.Interfaces;
@@ -20,7 +19,7 @@ namespace UnitTest.Commands
                 .RuleFor(u => u.Id, f => f.Random.Guid())
                 .RuleFor(u => u.Status, f => f.Random.Enum(Status.Pending,Status.Processed)).Generate();
 
-            var order = new Faker<Order>()
+            var orderDtoOutput = new Faker<OrderDtoOutput>()
                 .RuleFor(o => o.Id, command.Id)
                 .RuleFor(o => o.UserId, f => f.Random.Guid())
                 .RuleFor(o => o.OrderPrice, f => f.Random.Double())
@@ -29,7 +28,7 @@ namespace UnitTest.Commands
             var mockOrderService = new Mock<IOrderService>();
             mockOrderService
                 .Setup(s => s.UpdateOrderStatus(It.IsAny<Status>(), It.IsAny<Guid>()))
-                .ReturnsAsync(order);
+                .ReturnsAsync(orderDtoOutput);
 
             var handler = new UpdateOrderHandler(mockOrderService.Object);
 
@@ -37,7 +36,7 @@ namespace UnitTest.Commands
             var result = await handler.Handle(command, CancellationToken.None);
 
             // Assert
-            result.Should().BeEquivalentTo(order);
+            result.Should().BeEquivalentTo(orderDtoOutput);
 
             mockOrderService.Verify(s => s.UpdateOrderStatus(It.IsAny<Status>(), It.IsAny<Guid>()), Times.Once);
         }
@@ -53,7 +52,7 @@ namespace UnitTest.Commands
             var mockOrderService = new Mock<IOrderService>();
             mockOrderService
                 .Setup(s => s.UpdateOrderStatus(It.IsAny<Status>(), It.IsAny<Guid>()))
-                .ReturnsAsync(null as Order);
+                .ReturnsAsync(null as OrderDtoOutput);
 
             var handler = new UpdateOrderHandler(mockOrderService.Object);
 

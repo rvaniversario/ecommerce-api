@@ -4,133 +4,136 @@ using EcommerceApi.Controllers;
 using EcommerceApi.Context;
 using EcommerceApi.Repositories.Interfaces;
 using EcommerceApi.Entities;
-
+using EcommerceApi.Dtos;
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
 
-namespace EcommerceApi.Repositories;
-
-public class CartItemRepository : ICartItemRepository
+namespace EcommerceApi.Repositories
 {
-    private readonly string _conString;
-    protected readonly AppDbContext _context;
-    protected readonly ILogger<CartItemsController> _logger;
-
-    public CartItemRepository(AppDbContext context, ILogger<CartItemsController> logger, string conString)
+    public class CartItemRepository : ICartItemRepository
     {
-        _context = context;
-        _logger = logger;
-        _conString = conString;
+        private readonly string _connectionString;
+        protected readonly AppDbContext _context;
+        protected readonly ILogger<CartItemsController> _logger;
 
-        _context.Database.EnsureCreated();
-    }
-
-    public async Task<IEnumerable<CartItem>> GetCartItems(Guid OrderId)
-    {
-        try
+        public CartItemRepository(AppDbContext context, ILogger<CartItemsController> logger, IConfiguration configuration)
         {
-            _logger.LogInformation("Creating connection...");
-            using var connection = new SqlConnection(_conString);
-            var query = "SELECT * FROM CartItems WHERE OrderId = @Id";
+            _context = context;
+            _logger = logger;
+            _connectionString = configuration.GetConnectionString("EcommerceApi");
+            //_connectionString = configuration.GetConnectionString("EcommerceApiTest");
 
-            _logger.LogInformation("Opening connection...");
-            await connection.OpenAsync();
-
-            var items = connection.Query<CartItem>(query, new { Id = OrderId });
-
-            _logger.LogInformation("Fetching Cart Items...");
-            return items;
+            _context.Database.EnsureCreated();
         }
-        catch (Exception ex)
+
+        public async Task<IEnumerable<CartItem>> GetCartItems()
         {
-            _logger.LogError("{ex}", ex);
-            throw;
+            try
+            {
+                _logger.LogInformation("Creating connection...");
+                using var connection = new SqlConnection(_connectionString);
+                var query = "SELECT * FROM CartItems";
+
+                _logger.LogInformation("Opening connection...");
+                await connection.OpenAsync();
+
+                _logger.LogInformation("Fetching Cart Items...");
+                var items = await connection.QueryAsync<CartItem>(query);
+
+                return items;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("{ex}", ex);
+                throw;
+            }
         }
-    }
 
-    public async Task<CartItem> AddCartItem(CartItem item)
-    {
-        try
+        public async Task<CartItemDtoOutput> AddCartItem(CartItem item)
         {
-            _logger.LogInformation("Adding Cart Item...");
-            await _context.CartItems!.AddAsync(item);
+            try
+            {
+                _logger.LogInformation("Adding Cart Item...");
+                await _context.CartItems!.AddAsync(item);
 
-            _logger.LogInformation("Saving Changes...");
-            await _context.SaveChangesAsync();
+                _logger.LogInformation("Saving Changes...");
+                await _context.SaveChangesAsync();
 
-            return item;
+                return new CartItemDtoOutput
+                {
+                    Id = item.Id,
+                    OrderId = item.OrderId,
+                    ProductName = item.ProductName,
+                    ProductPrice = item.ProductPrice,
+                    ItemPrice = item.ItemPrice,
+                    Quantity = item.Quantity,
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("{ex}", ex);
+                throw;
+            }
         }
-        catch (Exception ex)
+
+        public async Task<CartItemDtoOutput> UpdateCartItem(Guid id, double itemPrice, int quantity)
         {
-            _logger.LogError("{ex}", ex);
-            throw;
+            try
+            {
+                var item = _context.CartItems.Find(id);
+
+                _logger.LogInformation("Updating item...");
+                item.ItemPrice = itemPrice;
+                item.Quantity = quantity;
+
+                _context.Update(item);
+
+                _logger.LogInformation("Saving Changes...");
+                await _context.SaveChangesAsync();
+
+                return new CartItemDtoOutput
+                {
+                    Id = item.Id,
+                    OrderId = item.OrderId,
+                    ProductName = item.ProductName,
+                    ProductPrice = item.ProductPrice,
+                    ItemPrice = item.ItemPrice,
+                    Quantity = item.Quantity,
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("{ex}", ex);
+                throw;
+            }
         }
-    }
 
-    public async Task<CartItem> UpdateCartItem(Guid id, double itemPrice, int quantity)
-    {
-        try
+        public async Task<CartItemDtoOutput> DeleteCartItem(Guid id)
         {
-            var item = _context.CartItems.Find(id);
+            try
+            {
+                var item = _context.CartItems.Find(id);
 
-            _logger.LogInformation("Updating item...");
-            item.ItemPrice = itemPrice;
-            item.Quantity = quantity;
+                _logger.LogInformation("Removing CartItem...");
+                _context.CartItems.Remove(item);
 
-            _context.Update(item);
+                _logger.LogInformation("Saving Changes...");
+                await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Saving Changes...");
-            await _context.SaveChangesAsync();
-
-            return item;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("{ex}", ex);
-            throw;
-        }
-    }
-
-    public async Task<CartItem> DeleteCartItem(Guid id)
-    {
-        try
-        {
-            var item = _context.CartItems.Find(id);
-
-            _logger.LogInformation("Removing CartItem...");
-            _context.CartItems.Remove(item);
-
-            _logger.LogInformation("Saving Changes...");
-            await _context.SaveChangesAsync();
-
-            return item;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("{ex}", ex);
-            throw;
-        }
-    }
-
-    public async Task<CartItem> GetCartItemById(Guid id)
-    {
-        try
-        {
-            _logger.LogInformation("Creating connection...");
-            using var connection = new SqlConnection(_conString);
-            var query = "SELECT * FROM CartItems WHERE Id = @Id";
-
-            _logger.LogInformation("Fetching Cart-item With ID: {id}...", id);
-            var cartItem = await connection.QuerySingleOrDefaultAsync<CartItem>(query, new { Id = id });
-
-            if (cartItem == null) return null;
-
-            return cartItem;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError("{ex}", ex);
-            throw;
+                return new CartItemDtoOutput
+                {
+                    Id = item.Id,
+                    OrderId = item.OrderId,
+                    ProductName = item.ProductName,
+                    ProductPrice = item.ProductPrice,
+                    ItemPrice = item.ItemPrice,
+                    Quantity = item.Quantity,
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("{ex}", ex);
+                throw;
+            }
         }
     }
 }

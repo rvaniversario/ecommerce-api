@@ -1,50 +1,50 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using EcommerceApi.Commands;
 using MediatR;
-using Bogus.DataSets;
-using Microsoft.AspNetCore.WebUtilities;
 
-namespace EcommerceApi.Controllers;
-
-[ApiVersion("1.0")]
-[Route("/api/v{version:apiVersion}/checkout")]
-[ApiController]
-public class CheckoutController : ControllerBase
+namespace EcommerceApi.Controllers
 {
-    private readonly IMediator _mediator;
-    private readonly ILogger<CheckoutController> _logger;
-
-    public CheckoutController(IMediator mediator, ILogger<CheckoutController> logger)
+    [ApiVersion("1.0")]
+    [Route("/api/v{version:apiVersion}/checkout")]
+    [ApiController]
+    public class CheckoutController : ControllerBase
     {
-        _mediator = mediator;
-        _logger = logger;
-    }
+        private readonly IMediator _mediator;
+        private readonly ILogger<CheckoutController> _logger;
 
-    [HttpPost]
-    public async Task<ActionResult> Checkout()
-    {
-        var userId = Request.Headers["x-user-id"][0];
-
-        var request = new CheckoutCommand()
+        public CheckoutController(IMediator mediator, ILogger<CheckoutController> logger)
         {
-            Id = Guid.Parse(userId),
-        };
-
-        try
-        {
-            var result = await _mediator.Send(request);
-
-            if (result == null)
-            {
-                return BadRequest($"No pending order for User ID: {userId}.");
-            }
-
-            return Ok(result);
+            _mediator = mediator;
+            _logger = logger;
         }
-        catch (Exception ex)
+
+        [HttpPost]
+        public async Task<ActionResult> Checkout()
         {
-            _logger.LogError(ex, "An error occurred while processing the {request}", nameof(request));
-            return StatusCode(500, "An unexpected error occurred. Please try again later.");
+            var userId = Request.Headers["x-user-id"].FirstOrDefault();
+            var parsedUserId = Guid.Parse(userId!);
+             
+            var request = new CheckoutCommand()
+            {
+                Id = parsedUserId,
+            };
+
+            try
+            {
+                var result = await _mediator.Send(request);
+
+                if (result == null)
+                {
+                    return BadRequest($"No pending order for User ID: {userId}.");
+                }
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while processing the {request}", nameof(request));
+                return StatusCode(500, "An unexpected error occurred. Please try again later.");
+            }
         }
     }
 }

@@ -13,7 +13,7 @@ namespace EcommerceApi.Handlers
 
         public async Task<User?> Handle(GetUserByIdQuery request, CancellationToken cancellationToken)
         {
-            var user = await _userService.GetUserById(request.Id);
+            var user = await _userService.GetById(request.Id);
             return user;
         }
     }

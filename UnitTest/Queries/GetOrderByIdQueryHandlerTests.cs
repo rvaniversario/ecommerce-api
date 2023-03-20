@@ -27,7 +27,7 @@ namespace UnitTest.Queries
 
             var mockOrderService = new Mock<IOrderService>();
             mockOrderService
-                .Setup(s => s.GetOrderById(It.IsAny<Guid>()))
+                .Setup(s => s.GetById(It.IsAny<Guid>()))
                 .ReturnsAsync(order);
 
             var handler = new GetOrderByIdHandler(mockOrderService.Object);
@@ -39,7 +39,7 @@ namespace UnitTest.Queries
             result.Should().NotBeNull();
             result.Should().BeEquivalentTo(order);
 
-            mockOrderService.Verify(s => s.GetOrderById(It.IsAny<Guid>()), Times.Once);
+            mockOrderService.Verify(s => s.GetById(It.IsAny<Guid>()), Times.Once);
         }
 
         [Fact]
@@ -51,7 +51,7 @@ namespace UnitTest.Queries
 
             var mockOrderService = new Mock<IOrderService>();
             mockOrderService
-                .Setup(s => s.GetOrderById(It.IsAny<Guid>()))
+                .Setup(s => s.GetById(It.IsAny<Guid>()))
                 .ReturnsAsync(null as Order);
 
             var handler = new GetOrderByIdHandler(mockOrderService.Object);
@@ -62,7 +62,7 @@ namespace UnitTest.Queries
             // Assert
             result.Should().BeNull();
 
-            mockOrderService.Verify(service => service.GetOrderById(It.IsAny<Guid>()), Times.Once);
+            mockOrderService.Verify(service => service.GetById(It.IsAny<Guid>()), Times.Once);
         }
     }
 }

@@ -13,7 +13,7 @@ namespace EcommerceApi.Handlers
 
         public async Task<IEnumerable<CartItem>> Handle(GetCartItemsQuery request, CancellationToken cancellationToken)
         {
-            var cartItems = await _cartItemService.GetCartItems(request.UserId);
+            var cartItems = await _cartItemService.GetAll();
             return cartItems;
         }
     }
