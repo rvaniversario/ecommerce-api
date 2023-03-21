@@ -1,8 +1,8 @@
 ﻿using MediatR;
-using EcommerceApi.Dtos;
 using EcommerceApi.Models;
+using EcommerceApi.Entities;
 
 namespace EcommerceApi.Commands
 {
-    public class DeleteOrderCommand : OrderModel, IRequest<OrderDtoOutput> { }
+    public class DeleteOrderCommand : OrderModel, IRequest<Order> { }
 }

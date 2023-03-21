@@ -1,8 +1,8 @@
 ﻿using MediatR;
-using EcommerceApi.Dtos;
 using EcommerceApi.Models;
+using EcommerceApi.Entities;
 
 namespace EcommerceApi.Commands
 {
-    public class AddUserCommand : UserModel, IRequest<UserDtoOutput> { }
+    public class AddUserCommand : UserModel, IRequest<User> { }
 }

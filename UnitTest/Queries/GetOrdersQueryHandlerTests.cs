@@ -6,7 +6,6 @@ using EcommerceApi.Queries;
 using EcommerceApi.Services.Interfaces;
 using FluentAssertions;
 using Moq;
-using Shouldly;
 
 namespace UnitTest.Queries
 {
@@ -25,7 +24,7 @@ namespace UnitTest.Queries
 
             var mockOrderService = new Mock<IOrderService>();
             mockOrderService
-                .Setup(s => s.GetAll())
+                .Setup(s => s.GetOrders(It.IsAny<Guid>()))
                 .ReturnsAsync(orders);
 
             var handler = new GetOrdersHandler(mockOrderService.Object);
@@ -43,7 +42,7 @@ namespace UnitTest.Queries
                 expectedOrder.Should().BeEquivalentTo(order);
             }
 
-            mockOrderService.Verify(s => s.GetAll(), Times.Once);
+            mockOrderService.Verify(s => s.GetOrders(It.IsAny<Guid>()), Times.Once);
         }
     }
 }

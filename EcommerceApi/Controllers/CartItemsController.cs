@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using EcommerceApi.Commands;
-using EcommerceApi.Dtos;
 using EcommerceApi.Queries;
 using MediatR;
+using EcommerceApi.Dtos;
 
 namespace EcommerceApi.Controllers
 {
@@ -23,13 +23,50 @@ namespace EcommerceApi.Controllers
         [HttpGet]
         public async Task<ActionResult> GetCartItems()
         {
-            var request = new GetCartItemsQuery();
+            var userId = Request.Headers["x-user-id"][0];
+
+            var request = new GetCartItemsQuery
+            {
+                UserId = Guid.Parse(userId),
+            };
 
             try
             {
                 var response = await _mediator.Send(request);
 
+                if (response == null)
+                {
+                    return Ok("No cart-items found.");
+                }
+
                 return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while processing the {request}", nameof(request));
+                return StatusCode(500, "An unexpected error occurred. Please try again later.");
+            }
+        }
+
+        [HttpGet]
+        [Route("{cartItemId:Guid}")]
+        public async Task<ActionResult> GetCartItemById([FromRoute] Guid cartItemId)
+        {
+            var request = new GetCartItemByIdQuery
+            {
+                Id = cartItemId
+            };
+
+            try
+            {
+                var result = await _mediator.Send(request);
+
+                if (result == null)
+                {
+                    return NotFound($"Could not find cart-item with ID: {cartItemId}.");
+                }
+
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -41,17 +78,16 @@ namespace EcommerceApi.Controllers
         [HttpPost]
         public async Task<ActionResult> AddCartItem([FromBody] AddCartItemDto dto)
         {
-            var userId = Request.Headers["x-user-id"].FirstOrDefault();
-            var parsedUserId = Guid.Parse(userId!);
+            var userId = Request.Headers["x-user-id"][0];
 
             var request = new AddCartItemCommand
             {
-                UserId = parsedUserId,
+                UserId = Guid.Parse(userId),
                 ProductName = dto.ProductName,
                 ProductPrice = dto.ProductPrice,
                 Quantity = dto.Quantity,
             };
-            
+
             try
             {
                 var response = await _mediator.Send(request);
@@ -66,16 +102,12 @@ namespace EcommerceApi.Controllers
         }
 
         [HttpPut]
-        [Route("{id:Guid}")]
-        public async Task<ActionResult> UpdateCartItem([FromBody] UpdateCartItemDto dto, [FromRoute] Guid id)
+        [Route("{cartItemId:Guid}")]
+        public async Task<ActionResult> UpdateCartItem([FromBody] UpdateCartItemDto dto, [FromRoute] Guid cartItemId)
         {
-            var userId = Request.Headers["x-user-id"].FirstOrDefault();
-            var parsedUserId = Guid.Parse(userId!);
-
             var request = new UpdateCartItemCommand
             {
-                Id = id,
-                UserId = parsedUserId,
+                Id = cartItemId,
                 Quantity = dto.Quantity,
             };
 
@@ -85,7 +117,7 @@ namespace EcommerceApi.Controllers
 
                 if (response == null)
                 {
-                    return NotFound($"Could not find item with ID: {id}");
+                    return NotFound($"Could not find item with ID: {cartItemId}");
                 }
 
                 return Ok(response);
@@ -98,12 +130,15 @@ namespace EcommerceApi.Controllers
         }
 
         [HttpDelete]
-        [Route("{id:Guid}")]
-        public async Task<ActionResult> DeleteCartItem([FromRoute] Guid id)
+        [Route("{cartItemId:Guid}")]
+        public async Task<ActionResult> DeleteCartItem([FromRoute] Guid cartItemId)
         {
+            var userId = Request.Headers["x-user-id"][0];
+
             var request = new DeleteCartItemCommand
             {
-                Id = id
+                Id = cartItemId,
+                UserId = Guid.Parse(userId),
             };
 
             try
@@ -112,7 +147,7 @@ namespace EcommerceApi.Controllers
 
                 if (response == null)
                 {
-                    return NotFound($"Could not find item with ID: {id}");
+                    return NotFound($"Could not find item with ID: {cartItemId}");
                 }
 
                 return Ok(response);

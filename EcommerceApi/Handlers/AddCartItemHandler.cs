@@ -1,11 +1,11 @@
 ﻿using MediatR;
 using EcommerceApi.Commands;
-using EcommerceApi.Dtos;
 using EcommerceApi.Services.Interfaces;
+using EcommerceApi.Entities;
 
 namespace EcommerceApi.Handlers
 {
-    public class AddCartItemHandler : IRequestHandler<AddCartItemCommand, CartItemDtoOutput>
+    public class AddCartItemHandler : IRequestHandler<AddCartItemCommand, CartItem>
     {
         private readonly ICartItemService _cartItemService;
 
@@ -14,9 +14,9 @@ namespace EcommerceApi.Handlers
             _cartItemService = cartItemService;
         }
 
-        public async Task<CartItemDtoOutput> Handle(AddCartItemCommand request, CancellationToken cancellationToken)
+        public async Task<CartItem> Handle(AddCartItemCommand request, CancellationToken cancellationToken)
         {
-            var output = await _cartItemService.Add(
+            var output = await _cartItemService.AddCartItem(
                 request.UserId,
                 request.ProductName!,
                 request.ProductPrice,

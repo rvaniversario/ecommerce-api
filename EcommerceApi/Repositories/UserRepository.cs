@@ -1,73 +1,65 @@
 ﻿using Dapper;
-using Microsoft.EntityFrameworkCore;
 using EcommerceApi.Controllers;
 using EcommerceApi.Context;
 using EcommerceApi.Repositories.Interfaces;
-using EcommerceApi.Dtos;
 using EcommerceApi.Entities;
 using Microsoft.Data.SqlClient;
 
-namespace EcommerceApi.Repositories
+namespace EcommerceApi.Repositories;
+
+public class UserRepository : IUserRepository
 {
-    public class UserRepository : IUserRepository
+    private readonly string _conString;
+    protected readonly AppDbContext _context;
+    protected readonly ILogger<UsersController> _logger;
+
+    public UserRepository(AppDbContext context, ILogger<UsersController> logger, string conString)
     {
-        private readonly string _connectionString;
-        protected readonly AppDbContext _context;
-        protected readonly ILogger<UsersController> _logger;
+        _context = context;
+        _logger = logger;
+        _conString = conString;
 
-        public UserRepository(AppDbContext context, ILogger<UsersController> logger, IConfiguration configuration)
+        _context.Database.EnsureCreated();
+    }
+
+    public async Task<User?> GetUserById(Guid id)
+    {
+        try
         {
-            _context = context; 
-            _logger = logger;
-            _connectionString = configuration.GetConnectionString("EcommerceApi");
-            //_connectionString = configuration.GetConnectionString("EcommerceApiTest");
+            _logger.LogInformation("Creating connection...");
+            using var connection = new SqlConnection(_conString);
+            var query = "SELECT * FROM Users WHERE Id = @Id";
 
-            _context.Database.EnsureCreated();
+            _logger.LogInformation("Fetching User With ID: {id}...", id);
+            var user = await connection.QuerySingleOrDefaultAsync<User>(query, new { id });
+
+            if (user == null) return null;
+
+            return user;
         }
-
-        public async Task<User?> GetUserById(Guid id)
+        catch (Exception ex)
         {
-            try
-            {
-                _logger.LogInformation("Creating connection...");
-                using var connection = new SqlConnection(_connectionString);
-                var query = "SELECT * FROM Users WHERE Id = @Id";
-
-                _logger.LogInformation("Fetching User With ID: {id}...", id);
-                var user = await connection.QuerySingleOrDefaultAsync<User>(query, new { id });
-
-                if (user == null) return null;
-
-                return user;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("{ex}", ex);
-                throw;
-            }
+            _logger.LogError("{ex}", ex);
+            throw;
         }
+    }
 
-        public async Task<UserDtoOutput> AddUser(User user)
+    public async Task<User> AddUser(User user)
+    {
+        try
         {
-            try
-            {
-                _logger.LogInformation("Adding User...");
-                await _context.Users!.AddAsync(user);
+            _logger.LogInformation("Adding User...");
+            await _context.Users!.AddAsync(user);
 
-                _logger.LogInformation("Saving Changes...");
-                await _context.SaveChangesAsync();
+            _logger.LogInformation("Saving Changes...");
+            await _context.SaveChangesAsync();
 
-                return new UserDtoOutput
-                {
-                    Id = user.Id,
-                    Name = user.Name
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("{ex}", ex);
-                throw;
-            }
+            return user;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError("{ex}", ex);
+            throw;
         }
     }
 }

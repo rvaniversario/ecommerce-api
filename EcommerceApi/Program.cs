@@ -12,12 +12,16 @@ using EcommerceApi.AutofacModules;
 using EcommerceApi.Middlewares;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Connection strings
+var mainConString = builder.Configuration.GetConnectionString("EcommerceApi");
+var testConString = builder.Configuration.GetConnectionString("EcommerceApiTest");
+
 // Add services to the container.
-// Dependency Register
 builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory())
     .ConfigureContainer<ContainerBuilder>(builder =>
     {
-        builder.RegisterModule(new RepositoriesModule());
+        builder.RegisterModule(new RepositoriesModule(mainConString));
         builder.RegisterModule(new ServicesModule());
     });
 
@@ -48,9 +52,7 @@ builder.Services.AddMediatR(typeof(Program));
 
 // Context
 builder.Services.AddDbContext<AppDbContext>
-    (o => o.UseSqlServer(builder.Configuration.GetConnectionString("EcommerceApi")));
-//builder.Services.AddDbContext<AppDbContext>
-//    (o => o.UseSqlServer(builder.Configuration.GetConnectionString("EcommerceApiTest")));
+    (o => o.UseSqlServer(mainConString));
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -62,25 +64,23 @@ builder.Services.ConfigureOptions<ConfigureSwaggerOptions>();
 var app = builder.Build();
 
 //// Configure the HTTP request pipeline.
-//if (app.Environment.IsDevelopment())
-//{
-//    app.UseSwagger();
-//    app.UseSwaggerUI();
-//}
-
-app.UseSwagger();
-app.UseSwaggerUI(option =>
+if (app.Environment.IsDevelopment())
 {
-    var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
-
-    foreach (ApiVersionDescription description in provider.ApiVersionDescriptions)
+    app.UseSwagger();
+    app.UseSwaggerUI(option =>
     {
-        option.SwaggerEndpoint(
-                $"/swagger/{description.GroupName}/swagger.json",
-                description.ApiVersion.ToString()
-            );
-    }
-});
+        var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+
+        foreach (ApiVersionDescription description in provider.ApiVersionDescriptions)
+        {
+            option.SwaggerEndpoint(
+                    $"/swagger/{description.GroupName}/swagger.json",
+                    description.ApiVersion.ToString()
+                );
+        }
+    });
+}
+
 app.UseMiddleware<BasicAuthMiddleware>();
 
 app.UseHttpsRedirection();

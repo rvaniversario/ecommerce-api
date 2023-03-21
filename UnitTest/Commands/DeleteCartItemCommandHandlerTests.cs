@@ -1,6 +1,6 @@
 ﻿using Bogus;
 using EcommerceApi.Commands;
-using EcommerceApi.Dtos;
+using EcommerceApi.Entities;
 using EcommerceApi.Handlers;
 using EcommerceApi.Services.Interfaces;
 using FluentAssertions;
@@ -17,7 +17,7 @@ namespace UnitTest.Commands
             var command = new Faker<DeleteCartItemCommand>()
                 .RuleFor(d => d.Id, f => f.Random.Guid()).Generate();
 
-            var cartItemDtoOutput = new Faker<CartItemDtoOutput>()
+            var cartItem = new Faker<CartItem>()
                 .RuleFor(c => c.Id, command.Id)
                 .RuleFor(c => c.OrderId, f => f.Random.Guid())
                 .RuleFor(c => c.ProductName, f => f.Commerce.ProductName())
@@ -27,8 +27,8 @@ namespace UnitTest.Commands
 
             var mockCartItemService = new Mock<ICartItemService>();
             mockCartItemService
-                .Setup(s => s.Delete(It.IsAny<Guid>()))
-                .ReturnsAsync(cartItemDtoOutput);
+                .Setup(s => s.DeleteCartItem(It.IsAny<Guid>()))
+                .ReturnsAsync(cartItem);
 
             var handler = new DeleteCartItemHandler(mockCartItemService.Object);
 
@@ -37,14 +37,14 @@ namespace UnitTest.Commands
 
             // Assert
             result.Should().NotBeNull();
-            result.Id.Should().Be(cartItemDtoOutput.Id);
-            result.OrderId.Should().Be(cartItemDtoOutput.OrderId);
-            result.ProductName.Should().Be(cartItemDtoOutput.ProductName);
-            result.ProductPrice.Should().Be(cartItemDtoOutput.ProductPrice);
-            result.ItemPrice.Should().Be(cartItemDtoOutput.ItemPrice);
-            result.Quantity.Should().Be(cartItemDtoOutput.Quantity);
+            result.Id.Should().Be(cartItem.Id);
+            result.OrderId.Should().Be(cartItem.OrderId);
+            result.ProductName.Should().Be(cartItem.ProductName);
+            result.ProductPrice.Should().Be(cartItem.ProductPrice);
+            result.ItemPrice.Should().Be(cartItem.ItemPrice);
+            result.Quantity.Should().Be(cartItem.Quantity);
 
-            mockCartItemService.Verify(s => s.Delete(It.IsAny<Guid>()), Times.Once);
+            mockCartItemService.Verify(s => s.DeleteCartItem(It.IsAny<Guid>()), Times.Once);
         }
 
         [Fact]
@@ -56,8 +56,8 @@ namespace UnitTest.Commands
 
             var mockCartItemService = new Mock<ICartItemService>();
             mockCartItemService
-                .Setup(s => s.Delete(It.IsAny<Guid>()))
-                .ReturnsAsync(null as CartItemDtoOutput);
+                .Setup(s => s.DeleteCartItem(It.IsAny<Guid>()))
+                .ReturnsAsync(null as CartItem);
 
             var handler = new DeleteCartItemHandler(mockCartItemService.Object);
 
@@ -67,7 +67,7 @@ namespace UnitTest.Commands
             // Assert
             result.Should().BeNull();
 
-            mockCartItemService.Verify(s => s.Delete(It.IsAny<Guid>()), Times.Once);
+            mockCartItemService.Verify(s => s.DeleteCartItem(It.IsAny<Guid>()), Times.Once);
         }
     }
 }

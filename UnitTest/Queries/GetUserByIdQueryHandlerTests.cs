@@ -24,7 +24,7 @@ namespace UnitTest.Queries
 
             var mockUserService = new Mock<IUserService>();
             mockUserService
-                .Setup(s => s.GetById(It.IsAny<Guid>()))
+                .Setup(s => s.GetUserById(It.IsAny<Guid>()))
                 .ReturnsAsync(user);
 
             var handler = new GetUserByIdHandler(mockUserService.Object);
@@ -36,7 +36,7 @@ namespace UnitTest.Queries
             result.Should().NotBeNull();
             result.Should().BeEquivalentTo(user);
 
-            mockUserService.Verify(s => s.GetById(It.IsAny<Guid>()), Times.Once);
+            mockUserService.Verify(s => s.GetUserById(It.IsAny<Guid>()), Times.Once);
         }
 
         [Fact]
@@ -48,7 +48,7 @@ namespace UnitTest.Queries
 
             var mockUserService = new Mock<IUserService>();
             mockUserService
-                .Setup(s => s.GetById(It.IsAny<Guid>()))
+                .Setup(s => s.GetUserById(It.IsAny<Guid>()))
                 .ReturnsAsync(null as User);
 
             var handler = new GetUserByIdHandler(mockUserService.Object);
@@ -59,7 +59,7 @@ namespace UnitTest.Queries
             // Assert
             result.Should().BeNull();
 
-            mockUserService.Verify(s => s.GetById(It.IsAny<Guid>()), Times.Once);
+            mockUserService.Verify(s => s.GetUserById(It.IsAny<Guid>()), Times.Once);
         }
     }
 }

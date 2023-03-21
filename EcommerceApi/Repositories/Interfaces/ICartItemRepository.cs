@@ -1,13 +1,13 @@
-﻿using EcommerceApi.Dtos;
-using EcommerceApi.Entities;
+﻿using EcommerceApi.Entities;
 
 namespace EcommerceApi.Repositories.Interfaces
 {
     public interface ICartItemRepository
     {
-        public Task<IEnumerable<CartItem>> GetCartItems();
-        public Task<CartItemDtoOutput> AddCartItem(CartItem item);
-        public Task<CartItemDtoOutput> UpdateCartItem(Guid id, double itemPrice, int quantity);
-        public Task<CartItemDtoOutput> DeleteCartItem(Guid id);
+        public Task<IEnumerable<CartItem>> GetCartItems(Guid orderId);
+        public Task<CartItem> GetCartItemById(Guid cartItemId);
+        public Task<CartItem> AddCartItem(CartItem cartItem);
+        public Task<CartItem> UpdateCartItem(Guid cartItemId, double itemPrice, int quantity);
+        public Task<CartItem> DeleteCartItem(Guid cartItemId);
     }
 }

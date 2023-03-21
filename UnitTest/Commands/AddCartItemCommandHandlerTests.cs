@@ -1,6 +1,6 @@
 ﻿using Bogus;
 using EcommerceApi.Commands;
-using EcommerceApi.Dtos;
+using EcommerceApi.Entities;
 using EcommerceApi.Handlers;
 using EcommerceApi.Services.Interfaces;
 using FluentAssertions;
@@ -18,10 +18,10 @@ namespace UnitTest.Commands
             var command = new Faker<AddCartItemCommand>()
                 .RuleFor(a => a.UserId, f => f.Random.Guid())
                 .RuleFor(a => a.ProductName, f => f.Commerce.ProductName())
-                .RuleFor(a => a.ProductPrice, f => f.Random.Double(1,100))
-                .RuleFor(a => a.Quantity, f => f.Random.Int(1,20)).Generate();
+                .RuleFor(a => a.ProductPrice, f => f.Random.Double(1, 100))
+                .RuleFor(a => a.Quantity, f => f.Random.Int(1, 20)).Generate();
 
-            var cartItemDtoOutput = new Faker<CartItemDtoOutput>()
+            var cartItem = new Faker<CartItem>()
                 .RuleFor(c => c.Id, f => f.Random.Guid())
                 .RuleFor(c => c.OrderId, f => f.Random.Guid())
                 .RuleFor(c => c.ProductName, command.ProductName)
@@ -32,12 +32,12 @@ namespace UnitTest.Commands
             var mockCartItemService = new Mock<ICartItemService>();
 
             mockCartItemService
-                .Setup(s => s.Add(
+                .Setup(s => s.AddCartItem(
                     It.IsAny<Guid>(),
                     It.IsAny<string>(),
                     It.IsAny<double>(),
                     It.IsAny<int>()))
-                .ReturnsAsync(cartItemDtoOutput);
+                .ReturnsAsync(cartItem);
 
             var handler = new AddCartItemHandler(mockCartItemService.Object);
 
@@ -46,14 +46,14 @@ namespace UnitTest.Commands
 
             // Assert
             result.Should().NotBeNull();
-            result.Id.Should().Be(cartItemDtoOutput.Id);
-            result.OrderId.Should().Be(cartItemDtoOutput.OrderId);
-            result.ProductName.Should().Be(cartItemDtoOutput.ProductName);
-            result.ProductPrice.Should().Be(cartItemDtoOutput.ProductPrice);
-            result.ItemPrice.Should().Be(cartItemDtoOutput.ItemPrice);
-            result.Quantity.Should().Be(cartItemDtoOutput.Quantity);
+            result.Id.Should().Be(cartItem.Id);
+            result.OrderId.Should().Be(cartItem.OrderId);
+            result.ProductName.Should().Be(cartItem.ProductName);
+            result.ProductPrice.Should().Be(cartItem.ProductPrice);
+            result.ItemPrice.Should().Be(cartItem.ItemPrice);
+            result.Quantity.Should().Be(cartItem.Quantity);
 
-            mockCartItemService.Verify(s => s.Add(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<double>(), It.IsAny<int>()), Times.Once);
+            mockCartItemService.Verify(s => s.AddCartItem(It.IsAny<Guid>(), It.IsAny<string>(), It.IsAny<double>(), It.IsAny<int>()), Times.Once);
         }
     }
 }
